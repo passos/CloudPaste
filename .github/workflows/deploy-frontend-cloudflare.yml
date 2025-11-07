@@ -2,7 +2,7 @@ name: Deploy Frontend to Cloudflare Pages
 
 on:
   push:
-    branches: [main, master]
+    branches: [production]
     paths:
       - "frontend/**"
       - "!frontend/vercel.json"
@@ -45,11 +45,24 @@ jobs:
         env:
           VITE_APP_ENV: production
           VITE_ENABLE_DEVTOOLS: false
+          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
 
       - name: Copy Cloudflare Functions
         run: |
           mkdir -p dist/functions
           cp -r functions/* dist/functions/ || echo "No functions directory found"
+
+      - name: Sync Cloudflare backend secret
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+        run: |
+          if [ -z "$VITE_BACKEND_URL" ]; then
+            echo "❌ 缺少 VITE_BACKEND_URL secret, 无法注入后端地址"
+            exit 1
+          fi
+          printf '%s' "$VITE_BACKEND_URL" | npx wrangler pages secret put VITE_BACKEND_URL --project-name=cloudpaste-frontend --branch production --quiet || true
 
       - name: Check if Pages project exists
         id: check-project
@@ -99,7 +112,12 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
         run: |
+          if [ -z "$VITE_BACKEND_URL" ]; then
+            echo "❌ 缺少 VITE_BACKEND_URL secret, 无法注入后端地址"
+            exit 1
+          fi
           npx wrangler pages deploy ./dist --project-name=cloudpaste-frontend --branch production 2>&1 | sed -E 's/https:\/\/[a-zA-Z0-9.-]*\.(workers|pages)\.dev/https:\/\/[REDACTED].\1.dev/g'
 
       - name: Display Success Information

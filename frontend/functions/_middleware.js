@@ -2,6 +2,8 @@
  * Cloudflare Pages中间件
  * 用于在运行时动态替换配置文件中的环境变量
  */
+const DEFAULT_BACKEND_URL = "https://cloudpaste-backend.ioenv.workers.dev";
+
 export async function onRequest(context) {
   const { request, env, next } = context;
   const url = new URL(request.url);
@@ -14,7 +16,7 @@ export async function onRequest(context) {
 
     // 替换占位符为实际的环境变量值
     // 如果环境变量不存在，则使用默认的开发环境URL
-    const backendUrl = env.VITE_BACKEND_URL || "http://localhost:8787";
+    const backendUrl = env.VITE_BACKEND_URL || DEFAULT_BACKEND_URL;
     const modifiedText = originalText.replace("__BACKEND_URL__", backendUrl);
 
     // 返回修改后的配置文件

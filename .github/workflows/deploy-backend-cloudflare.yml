@@ -23,7 +23,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "20"
           cache: "npm"
           cache-dependency-path: "./backend/package-lock.json"
 
@@ -56,6 +56,7 @@ jobs:
         run: |
           echo "检查并创建D1数据库..."
           DATABASE_LIST=$(npx wrangler d1 list --json 2>/dev/null || echo "[]")
+          echo DATABASE_LIST=$DATABASE_LIST
           EXISTING_DB=$(echo "$DATABASE_LIST" | jq -r '.[] | select(.name=="cloudpaste-db") | .uuid')
 
           if [ -n "$EXISTING_DB" ]; then

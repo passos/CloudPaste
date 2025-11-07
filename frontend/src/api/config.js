@@ -5,7 +5,7 @@
  */
 
 // 默认的开发环境API基础URL
-const DEFAULT_DEV_API_URL = "http://localhost:8787";
+const DEFAULT_DEV_API_URL = "https://localhost:8787";
 
 // 检查是否在Docker环境中运行
 const isDockerEnvironment = () => {
@@ -24,19 +24,20 @@ function getApiBaseUrl() {
     }
   }
 
-  // 非Docker环境下才检查localStorage
+  // 所有环境都检查环境变量
+  const envUrl = import.meta.env.VITE_BACKEND_URL;
+  if (envUrl) {
+    console.log("使用环境变量中的后端URL:", envUrl);
+    return envUrl;
+  }
+
+  // 非Docker环境下才检查localStorage（仅作为最后的开发兜底）
   if (!isDockerEnvironment() && typeof window !== "undefined" && window.localStorage) {
     const storedUrl = localStorage.getItem("vite-api-base-url");
     if (storedUrl) {
       console.log("非Docker环境：使用localStorage中的后端URL:", storedUrl);
       return storedUrl;
     }
-  }
-
-  // 所有环境都检查环境变量
-  const envUrl = import.meta.env.VITE_BACKEND_URL;
-  if (envUrl) {
-    return envUrl;
   }
 
   // 最后使用默认值
